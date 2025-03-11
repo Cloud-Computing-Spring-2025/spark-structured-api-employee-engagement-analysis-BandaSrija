@@ -1,87 +1,91 @@
-# task1_identify_departments_high_satisfaction.py
-
+# task1_departments_satisfaction_analysis.py
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, when, round as spark_round
+from pyspark.sql.functions import col, count, format_string
 
-def initialize_spark(app_name="Task1_Identify_Departments"):
+def create_spark_session(app_name="Department_Satisfaction_Analysis"):
     """
-    Initialize and return a SparkSession.
+    Create and return a Spark session.
     """
-    spark = SparkSession.builder \
+    session = SparkSession.builder \
         .appName(app_name) \
+        .config("spark.sql.shuffle.partitions", "50") \
         .getOrCreate()
-    return spark
+    return session
 
-def load_data(spark, file_path):
+def read_data(session, file_path):
     """
-    Load the employee data from a CSV file into a Spark DataFrame.
-
+    Load employee data from the given CSV file into a Spark DataFrame.
+    
     Parameters:
-        spark (SparkSession): The SparkSession object.
-        file_path (str): Path to the employee_data.csv file.
-
+        session (SparkSession): The SparkSession object.
+        file_path (str): The path to the CSV file.
+    
     Returns:
-        DataFrame: Spark DataFrame containing employee data.
+        DataFrame: The loaded Spark DataFrame.
     """
     schema = "EmployeeID INT, Department STRING, JobTitle STRING, SatisfactionRating INT, EngagementLevel STRING, ReportsConcerns BOOLEAN, ProvidedSuggestions BOOLEAN"
+    data_frame = session.read.csv(file_path, header=True, schema=schema)
+    return data_frame
+
+def analyze_department_satisfaction(data_frame):
+    """
+    Analyze departments where more than 5% of employees have a high satisfaction rating and engagement.
     
-    df = spark.read.csv(file_path, header=True, schema=schema)
-    return df
-
-def identify_departments_high_satisfaction(df):
-    """
-    Identify departments with more than 50% of employees having a Satisfaction Rating > 4 and Engagement Level 'High'.
-
     Parameters:
-        df (DataFrame): Spark DataFrame containing employee data.
-
+        data_frame (DataFrame): The Spark DataFrame with employee data.
+    
     Returns:
-        DataFrame: DataFrame containing departments meeting the criteria with their respective percentages.
+        DataFrame: A DataFrame showing departments with more than 5% high satisfaction employees.
     """
-    # TODO: Implement Task 1
-    # Steps:
-    # 1. Filter employees with SatisfactionRating > 4 and EngagementLevel == 'High'.
-    # 2. Calculate the percentage of such employees within each department.
-    # 3. Identify departments where this percentage exceeds 50%.
-    # 4. Return the result DataFrame.
+    # Filter employees with a high satisfaction rating and engagement level
+    high_satisfaction_df = data_frame.filter((col("SatisfactionRating") > 4) & (col("EngagementLevel") == "High"))
+    
+    # Count employees with high satisfaction by department
+    department_high_satisfaction = high_satisfaction_df.groupBy("Department").agg(count("*").alias("HighSatisfactionCount"))
+    
+    # Count total employees by department
+    department_total_count = data_frame.groupBy("Department").agg(count("*").alias("TotalCount"))
 
-    pass  # Remove this line after implementing the function
+    # Calculate percentage of high satisfaction employees
+    department_percentage = department_high_satisfaction.join(department_total_count, "Department")\
+                                                       .withColumn("Percentage", format_string("%.2f%%", (col("HighSatisfactionCount") / col("TotalCount") * 100)))\
+                                                       .filter(col("Percentage").substr(0, 4) > "5.00")
+    
+    return department_percentage.select("Department", "Percentage")
 
-def write_output(result_df, output_path):
+def save_output(data_frame, output_path):
     """
-    Write the result DataFrame to a CSV file.
-
+    Save the result DataFrame to a CSV file.
+    
     Parameters:
-        result_df (DataFrame): Spark DataFrame containing the result.
-        output_path (str): Path to save the output CSV file.
-
-    Returns:
-        None
+        data_frame (DataFrame): The DataFrame to save.
+        output_path (str): Path to save the output file.
     """
-    result_df.coalesce(1).write.csv(output_path, header=True, mode='overwrite')
+    data_frame.coalesce(1).write.option("header", "true").csv(output_path, mode='overwrite')
 
 def main():
     """
-    Main function to execute Task 1.
+    Main function to execute the satisfaction analysis for departments.
     """
-    # Initialize Spark
-    spark = initialize_spark()
-    
-    # Define file paths
-    input_file = "/workspaces/Employee_Engagement_Analysis_Spark/input/employee_data.csv"
-    output_file = "/workspaces/Employee_Engagement_Analysis_Spark/outputs/task1/departments_high_satisfaction.csv"
-    
-    # Load data
-    df = load_data(spark, input_file)
-    
-    # Perform Task 1
-    result_df = identify_departments_high_satisfaction(df)
-    
-    # Write the result to CSV
-    write_output(result_df, output_file)
-    
-    # Stop Spark Session
-    spark.stop()
+    # Create a Spark session
+    session = create_spark_session()
 
+    # Define input and output file paths
+    input_file = "/workspaces/spark-structured-api-employee-engagement-analysis-BandaSrija/input/employee_data.csv"
+    output_file = "/workspaces/spark-structured-api-employee-engagement-analysis-BandaSrija/outputs/high_satisfaction_departments.csv"
+    
+    # Load the data from the CSV file
+    employee_data = read_data(session, input_file)
+    
+    # Perform the department analysis
+    result = analyze_department_satisfaction(employee_data)
+    
+    # Save the result to a CSV file
+    save_output(result, output_file)
+
+    # Stop the Spark session
+    session.stop()
+
+# Ensure the script runs only if executed directly
 if __name__ == "__main__":
     main()
