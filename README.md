@@ -287,4 +287,4 @@ ls outputs/
 
 ### 4. **Exit the Container**
 
-exit
+exit 
