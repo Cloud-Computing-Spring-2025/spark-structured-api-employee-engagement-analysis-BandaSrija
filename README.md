@@ -249,3 +249,42 @@ A comparative analysis showing average Engagement Levels across Job Titles, high
 | Support     | 2.8                |
 
 ---
+
+## **Objective**
+
+The goal of this assignment is to apply Spark Structured APIs to analyze a dataset containing employee information. You will derive insights related to employee satisfaction, engagement, concerns, and job titles. Specifically, the three tasks are designed to help you:
+
+1. **Identify Departments with High Satisfaction and Engagement**: Determine which departments have more than 50% of their employees with a high satisfaction rating and engagement level.
+2. **Identify Employees Who Feel Valued but Didn’t Suggest Improvements**: Identify employees who feel valued but did not provide suggestions.
+3. **Compare Engagement Levels Across Job Titles**: Compare and identify the engagement levels across different job titles and determine which job title has the highest average engagement level.
+
+## **Work Approach**
+
+1. **Data Loading**: The employee data will be loaded into Spark DataFrames for manipulation.
+2. **Data Filtering and Transformation**: The data will be filtered based on various conditions (e.g., satisfaction rating, engagement level, etc.) to isolate subsets of interest.
+3. **Aggregations**: The analysis will involve aggregating data, such as calculating percentages and averages for specific groups of employees.
+4. **Result Exporting**: The results of the analysis will be saved to the appropriate output files in CSV or text format.
+
+## **Step-by-Step Command Process**
+
+### 1. **Setting up the Environment**
+
+Before running the code, ensure that you have the necessary prerequisites installed (Python, PySpark, Apache Spark). Refer to the **Prerequisites** section of this README for installation guides.
+
+### 2. **Project Directory Structure**
+
+Ensure your project directory follows the structure below:
+
+spark-submit src/task1_identify_departments_high_satisfaction.py
+spark-submit src/task2_valued_no_suggestions.py
+spark-submit src/task3_compare_engagement_levels.py
+
+Verify the Outputs: After running the tasks, check the outputs/ directory for the resulting files:
+
+### 3. **Verify outputs**
+
+ls outputs/
+
+### 4. **Exit the Container**
+
+exit
